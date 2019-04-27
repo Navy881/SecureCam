@@ -1,0 +1,49 @@
+<html>
+  <head>
+    <title>Motion Detector</title>
+  </head>
+  <body>
+  
+    <h1>Motion Detector</h1>
+	
+	<form action="/start" method="post">
+		<button name="startBtn" type="submit">Start detect</button>
+	</form>
+	
+	<form action="/stop" method="post">
+		<button name="stopBtn" type="submit">Stop detect</button>
+	</form>
+	
+	<b>Video file: {{vfilename}}</b><Br>
+
+	
+	<form action="/refresh" method="post">
+		<Br><input type="checkbox" name="Show_edges" {{show_edges_state}}/> Show edges<Br>
+		<Br>
+		<button name="refreshBtn" type="submit">Refresh</button>
+	</form>	
+	
+	<form action="/bot" method="post">
+		<button name="startbotBtn" type="submit">Start bot</button>
+	</form>	
+	
+	
+	<form action="/update_settings" method="post">
+		<p><strong>Settings</strong></p>
+		<p><strong>Detector parameters:</strong></p>
+		<p>Counter area size <input size="3" value={{min_area}}></p>
+		<p>Blur size <input size="3" value={{blur_size}}></p>
+		<p>Blur power <input size="3" value={{blur_power}}></p>
+		<p>Low threshold <input size="3" value={{threshold_low}}></p>
+		<p><strong>Telegram bot parameters:</strong></p>
+		<p>Bot token <input size="25" value={{bot_token}}></p>
+		<p>Chat's id <input size="25" value={{chat_id}}></p>
+		<p>Proxy URL <input size="25" value={{proxy_url}}></p>
+		<p>Sending period <input size="3" value={{sending_period}}></p>
+		<button name="upatesettingsBtn" type="submit">Update settings</button>
+	</form>	
+	
+	<img src="{{ url_for('video_feed') }}">
+	
+  </body>
+</html>
