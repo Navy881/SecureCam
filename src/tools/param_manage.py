@@ -2,87 +2,87 @@
 
 import json
 
-#full_path = dirname(dirname(dirname(abspath(__file__))))  # /../../../
+# full_path = dirname(dirname(dirname(abspath(__file__))))  # /../../../
 file_path = 'config/config.json' 
 
 
 # Open json-file for read
-def readConfig():
-    #file_path = full_path+'/congig/config.json'
+def read_config():
+    # file_path = full_path+'/congig/config.json'
     with open(file_path, 'r') as f:
         data = json.loads(f.read())
     return data
 
 
 # Write to json-file
-def editConfig(data):
-    #file_path = full_path+'/congig/config.json'
+def edit_config(data):
+    # file_path = full_path+'/congig/config.json'
     with open(file_path, 'w') as f:
         json.dump(data, f)
 
 
 # Read detection parameters
-def getDetectionParameters():
-    data = readConfig()
+def get_detection_parameters():
+    data = read_config()
 
-    MIN_AREA = data['DetectionParameters']['min_area']
-    BLUR_SIZE = data['DetectionParameters']['blur_size']
-    BLUR_POWER = data['DetectionParameters']['blur_power']
-    THRESHOLD_LOW = data['DetectionParameters']['threshold_low']
+    min_area = data['DetectionParameters']['min_area']
+    blur_size = data['DetectionParameters']['blur_size']
+    blur_power = data['DetectionParameters']['blur_power']
+    threshold_low = data['DetectionParameters']['threshold_low']
 
-    return MIN_AREA, BLUR_SIZE, BLUR_POWER, THRESHOLD_LOW
+    return min_area, blur_size, blur_power, threshold_low
 
 
 # Edit detection parameters
-def setDetectionParameters(MIN_AREA, BLUR_SIZE, BLUR_POWER, THRESHOLD_LOW):   
-    data = readConfig()
+def set_detection_parameters(min_area, blur_size, blur_power, threshold_low):
+    data = read_config()
     
-    data['DetectionParameters']['min_area'] = MIN_AREA
-    data['DetectionParameters']['blur_size'] = BLUR_SIZE
-    data['DetectionParameters']['blur_power'] = BLUR_POWER
-    data['DetectionParameters']['threshold_low'] = THRESHOLD_LOW
+    data['DetectionParameters']['min_area'] = min_area
+    data['DetectionParameters']['blur_size'] = blur_size
+    data['DetectionParameters']['blur_power'] = blur_power
+    data['DetectionParameters']['threshold_low'] = threshold_low
     
-    editConfig(data)
+    edit_config(data)
     
     
 # Read bot parameters
-def getBotParameters():
-    data = readConfig()
+def get_bot_parameters():
+    data = read_config()
     
-    BOT_TOKEN = data['BotParameters']['token'] # bot token
-    PROXY_URL = data['BotParameters']['proxy_url'] # proxy-server address
-    MY_CHAT_ID = data['BotParameters']['chat_id'] # chat id with bot
-    SENDING_PERIOD = data['BotParameters']['sending_period'] # message sending period in to chat by bot
-    USERNAME = data['BotParameters']['username'] # proxy username
-    PASSWORD = data['BotParameters']['password'] # proxy password
+    bot_token = data['BotParameters']['token']  # bot token
+    proxy_url = data['BotParameters']['proxy_url']  # proxy-server address
+    private_chat_id = data['BotParameters']['chat_id']  # chat id with bot
+    sending_period = data['BotParameters']['sending_period']  # message sending period in to chat by bot
+    username = data['BotParameters']['username']  # proxy username
+    password = data['BotParameters']['password']  # proxy password
 
     # Proxy parameters
-    REQUEST_KWARGS={'proxy_url': PROXY_URL}
+    request_kwargs = {'proxy_url': proxy_url}
     
-    return BOT_TOKEN, REQUEST_KWARGS, MY_CHAT_ID, PROXY_URL, SENDING_PERIOD, USERNAME, PASSWORD
+    return bot_token, request_kwargs, private_chat_id, proxy_url, sending_period, username, password
 
 
 # Edit bot parameters
-def setBotParameters(BOT_TOKEN, PROXY_URL, MY_CHAT_ID, SENDING_PERIOD, USERNAME, PASSWORD):   
-    data = readConfig()
+def set_bot_parameters(bot_token, proxy_url, private_chat_id, sending_period, username, password):
+    data = read_config()
     
-    data['BotParameters']['token'] = BOT_TOKEN # bot token
-    data['BotParameters']['proxy_url'] = PROXY_URL # proxy-server address
-    data['BotParameters']['chat_id'] = MY_CHAT_ID # chat id with bot
-    data['BotParameters']['sending_period'] = SENDING_PERIOD # message sending period in to chat by bot
-    data['BotParameters']['username'] = USERNAME # proxy username
-    data['BotParameters']['password'] = PASSWORD # proxy password
+    data['BotParameters']['token'] = bot_token  # bot token
+    data['BotParameters']['proxy_url'] = proxy_url  # proxy-server address
+    data['BotParameters']['chat_id'] = private_chat_id  # chat id with bot
+    data['BotParameters']['sending_period'] = sending_period  # message sending period in to chat by bot
+    data['BotParameters']['username'] = username  # proxy username
+    data['BotParameters']['password'] = password  # proxy password
     
-    editConfig(data)
+    edit_config(data)
 
 
 # Read NN parameters
-def getNNParameters():
-    data = readConfig()
+def get_nn_parameters():
+    data = read_config()
 
-    NET_ARCHITECTURE = data['NNParameters']['net_architecture'] # net architecture
-    NET_MODEL = data['NNParameters']['net_model'] # net model
-    CLASSES = data['NNParameters']['classes'] # classes
-    CONFIDENCE = data['NNParameters']['confidence'] # confidence
+    net_architecture = data['NNParameters']['net_architecture']  # net architecture
+    net_model = data['NNParameters']['net_model']  # net model
+    classes = data['NNParameters']['classes']  # classes
+    confidence = data['NNParameters']['confidence']  # confidence
 
-    return NET_ARCHITECTURE, NET_MODEL, CLASSES, CONFIDENCE
+    return net_architecture, net_model, classes, confidence
