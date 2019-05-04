@@ -12,7 +12,7 @@ from src.tools.video_record import record, save_image
 class Camera(object):
     def __init__(self, cam, fps):
         self.video = cv2.VideoCapture(cam)
-        # self.video.set(cv2.CAP_PROP_FPS, fps)
+        self.video.set(cv2.CAP_PROP_FPS, fps)
         # self.video.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         # self.video.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
