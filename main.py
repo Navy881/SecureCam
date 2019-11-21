@@ -54,9 +54,19 @@ def grab(camera, queue):
     colors = np.random.uniform(0, 255, size=(len(classes), 3))
 
     while running:
-        img, jpeg, detection_status = camera.motion_detect(running, out, show_edges, dnn_detection_status, net, classes,
-                                                           colors, float(confidence), int(min_area), int(blur_size),
-                                                           int(blur_power), int(threshold_low), int(sending_period))
+        img, jpeg, detection_status = camera.motion_detect(running=running,
+                                                           video_file=out,
+                                                           show_edges=show_edges,
+                                                           dnn_detection_status=dnn_detection_status,
+                                                           net=net,
+                                                           classes=classes,
+                                                           colors=colors,
+                                                           min_area=int(min_area),
+                                                           blur_size=int(blur_size),
+                                                           blur_power=int(blur_power),
+                                                           threshold_low=int(threshold_low),
+                                                           sending_period=int(sending_period))
+
         frame["img"] = img
         if queue.qsize() < max_queue_size:
             queue.put(frame)

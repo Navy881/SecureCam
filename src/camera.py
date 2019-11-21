@@ -32,7 +32,7 @@ class Camera(object):
             cv2.imwrite('photo/bot_screenshot.png', frame)
 
     def motion_detect(self, running, video_file, show_edges,
-                      dnn_detection_status, net, classes, colors, given_confidence=0.2,
+                      dnn_detection_status=False, net=None, classes=None, colors=None, given_confidence=0.2,
                       min_area=10, blur_size=11, blur_power=1, threshold_low=50, sending_period=60):
         first_frame = None
         
@@ -75,7 +75,7 @@ class Camera(object):
                 if cv2.contourArea(c) >= min_area:
                     record(video_file, frame)
 
-                    if dnn_detection_status:
+                    if dnn_detection_status and net is not None and classes is not None and colors is not None:
                         frame1 = self.real_time_detection(frame1, net, classes, colors, given_confidence)
 
                     if os.path.exists('photo/screenshot_temp.png'):
