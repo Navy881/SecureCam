@@ -125,9 +125,10 @@ class Camera(object):
                 idx = int(detections[0, 0, i, 1])
                 box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
                 (startX, startY, endX, endY) = box.astype("int")
+                label = "{}: {:.2f}%".format(classes[idx], confidence * 100)
+                print('INFO: detected {}'.format(label))
 
                 # draw the prediction on the frame
-                label = "{}: {:.2f}%".format(classes[idx], confidence * 100)
                 cv2.rectangle(frame, (startX, startY), (endX, endY), colors[idx], 2)
                 y = startY - 15 if startY - 15 > 15 else startY + 15
                 cv2.putText(frame, label, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, colors[idx], 2)
@@ -148,6 +149,8 @@ class Camera(object):
             net.setInput(blob)
             detections = net.forward()
 
+            detected_objects = dict()
+
             # loop over the detections
             for i in np.arange(0, detections.shape[2]):
                 # extract the confidence (i.e., probability) associated with
@@ -163,11 +166,16 @@ class Camera(object):
                     idx = int(detections[0, 0, i, 1])
                     box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
                     (startX, startY, endX, endY) = box.astype("int")
+                    label = "{}: {:.2f}%".format(classes[idx], confidence * 100)
+                    print('INFO: detected {}'.format(label))
+
+                    # Crop detected_objects
+                    crop_detected_object = frame[startY:endY, startX:endX]
+                    detected_objects[str(i) + '_' + label] = crop_detected_object
 
                     # draw the prediction on the frame
-                    label = "{}: {:.2f}%".format(classes[idx], confidence * 100)
                     cv2.rectangle(frame, (startX, startY), (endX, endY), colors[idx], 2)
                     y = startY - 15 if startY - 15 > 15 else startY + 15
                     cv2.putText(frame, label, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, colors[idx], 2)
 
-            return frame
+            return frame, detected_objects
