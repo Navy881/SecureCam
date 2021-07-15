@@ -17,9 +17,11 @@
 	}, 
 	"NNParameters": 
 	{
-		"net_architecture": "dnn/MobileNetSSD_deploy.prototxt.txt", 
-		"net_model": "dnn/MobileNetSSD_deploy.caffemodel", 
-		"classes": ["background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"], 
-		"confidence": "0.2"
+		"net_architecture_": "dnn/EmotiW_Cyclic LBP-5_deploy.prototxt",
+		"net_model_": "dnn/EmotiW_VGG_S_Cyclic LBP-5.caffemodel",
+		"net_architecture": "dnn/face_detector_deploy.prototxt",
+		"net_model": "dnn/res10_300x300_ssd_iter_140000.caffemodel",
+		"classes": ["Angry", "Disgust", "Fear", "Happy", "Neutral", "Sad", "Surprise"],
+		"confidence": "0.6"
 	}
 }

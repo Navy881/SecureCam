@@ -2,6 +2,7 @@
 
 import sys
 import subprocess
+
 import cv2
 import numpy as np
 from threading import Thread
@@ -38,7 +39,9 @@ bot_token, request_kwargs, private_chat_id, proxy_url, sending_period, username,
 net_architecture, net_model, classes, confidence = get_nn_parameters()
 
 CAM = 0  # TODO to config
-FPS = 10  # TODO to config
+FPS = 60  # TODO to config
+camera = Camera(CAM, FPS, True)
+
 max_queue_size = 10  # TODO to config
 
 
@@ -46,7 +49,7 @@ def grab(camera, queue):
     global v_filename, detection_status, dnn_detection_status
 
     frame = {}
-    out, v_filename = create_video()
+    v_filename = camera.get_video_filename()
 
     # load our serialized model from disk
     print("[INFO] loading model...")
@@ -54,18 +57,18 @@ def grab(camera, queue):
     colors = np.random.uniform(0, 255, size=(len(classes), 3))
 
     while running:
-        img, jpeg, detection_status = camera.motion_detect(running=running,
-                                                           video_file=out,
-                                                           show_edges=show_edges,
-                                                           dnn_detection_status=dnn_detection_status,
-                                                           net=net,
-                                                           classes=classes,
-                                                           colors=colors,
-                                                           min_area=int(min_area),
-                                                           blur_size=int(blur_size),
-                                                           blur_power=int(blur_power),
-                                                           threshold_low=int(threshold_low),
-                                                           sending_period=int(sending_period))
+        img, jpeg, detection_status, person_in_image = camera.motion_detect(running=running,
+                                                                            show_edges=show_edges,
+                                                                            dnn_detection_status=dnn_detection_status,
+                                                                            net=net,
+                                                                            classes=classes,
+                                                                            colors=colors,
+                                                                            given_confidence=float(confidence),
+                                                                            min_area=int(min_area),
+                                                                            blur_size=int(blur_size),
+                                                                            blur_power=int(blur_power),
+                                                                            threshold_low=int(threshold_low),
+                                                                            sending_period=int(sending_period))
 
         frame["img"] = img
         if queue.qsize() < max_queue_size:
@@ -125,17 +128,20 @@ class MyWindowClass(QtWidgets.QMainWindow, main_form.Ui_MainWindow):  # ui_form)
 
         if running is False:
             running = True
-            capture_thread = Thread(target=grab, args=(Camera(CAM, FPS), q))  # Thread for detection
+            camera.start()
+            capture_thread = Thread(target=grab, args=(camera, q))  # Thread for detection
             capture_thread.start()
             self.startButton.setText('Stop')
         else:
             running = False
             capture_thread.join()
+            camera.stop()
             self.startButton.setText('Start')
 
     # ImgWidget frame behavior
     def update_frame(self):
         if not q.empty():
+
             self.statusLabel.setText(detection_status)  # Output detection status
             self.timeLabel.setText(str(datetime.now().replace(microsecond=0) - start_time))  # Output timestamp
             self.textField.setText(v_filename)  # Output video filename
@@ -176,7 +182,7 @@ class MyWindowClass(QtWidgets.QMainWindow, main_form.Ui_MainWindow):  # ui_form)
     # Button "Close" behavior
     def closeEvent(self, event):
         global running, capture_thread
-        
+
         running = False
         capture_thread.join()
 
@@ -266,7 +272,7 @@ class ConfigWindow(QtWidgets.QWidget, config_form.Ui_parametersForm):  # ui_form
                                  self.blurPowerLineEdit.text(), self.lowThresholdLineEdit.text())
 
         set_bot_parameters(self.botTokenLineEdit.text(), self.proxyUrlLineEdit.text(),
-                           self.chatIdLineEdit.text(),  self.sendingPeriodLineEdit.text(),
+                           self.chatIdLineEdit.text(), self.sendingPeriodLineEdit.text(),
                            self.proxyUsernameLineEdit.text(), self.proxyPasswordLineEdit.text())
 
         min_area, blur_size, blur_power, threshold_low = get_detection_parameters
