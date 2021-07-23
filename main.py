@@ -6,15 +6,14 @@ import subprocess
 import cv2
 import numpy as np
 from threading import Thread
-from PyQt5 import QtCore, QtGui, QtWidgets, uic
+from PyQt5 import QtCore, QtGui, QtWidgets
 from datetime import datetime
-from multiprocessing import Queue
+# from multiprocessing import Queue
+from src.tools.queue_for_mac import Queue  # For Max OS
 
 from src.ui import main_form, config_form  # GUI design
 from src.camera import Camera
-from src.tools.video_record import create_video
-from src.tools.param_manage import get_detection_parameters, set_detection_parameters, get_bot_parameters, \
-    set_bot_parameters, get_nn_parameters
+from src.tools.config import config
 
 
 running = False
@@ -23,37 +22,45 @@ pause = False
 hide_video = False
 alarm_bot_status = False
 dnn_detection_status = False
-
 capture_thread = None
 bot_thread = None
 bot_subproc = subprocess.Popen
-
+max_queue_size = 10
 # ui_form = uic.loadUiType("src/ui/form.ui")[0] # Опиание GUI в .ui
-q = Queue()
 detection_status = ''
-v_filename = ''
 start_time = datetime.now().replace(microsecond=0)
 
-min_area, blur_size, blur_power, threshold_low = get_detection_parameters()
-bot_token, request_kwargs, private_chat_id, proxy_url, sending_period, username, password = get_bot_parameters()
-net_architecture, net_model, classes, confidence = get_nn_parameters()
+q = Queue()
+config.get_config()
 
-CAM = 0  # TODO to config
-FPS = 60  # TODO to config
+CAM = config["CameraParameters"]["camera_index"]
+FPS = config["CameraParameters"]["fps"]
+net_arch = config["NNParameters"]["object"]["architecture"]
+net_model = config["NNParameters"]["object"]["model"]
+net_confidence = config["NNParameters"]["object"]["confidence"]
+classes = config["NNParameters"]["object"]["classes"]
+min_area = config["DetectionParameters"]["min_area"]
+blur_size = config["DetectionParameters"]["blur_size"]
+blur_power = config["DetectionParameters"]["blur_power"]
+threshold_low = config["DetectionParameters"]["threshold_low"]
+bot_token = config["BotParameters"]["token"]
+bot_private_chat_id = config["BotParameters"]["chat_id"]
+bot_proxy_url = config["BotParameters"]["proxy_url"]
+bot_sending_period = config["BotParameters"]["sending_period"]
+bot_username = config["BotParameters"]["username"]
+bot_password = config["BotParameters"]["password"]
+
 camera = Camera(CAM, FPS, True)
-
-max_queue_size = 10  # TODO to config
 
 
 def grab(camera, queue):
-    global v_filename, detection_status, dnn_detection_status
+    global detection_status, dnn_detection_status
 
     frame = {}
-    v_filename = camera.get_video_filename()
 
     # load our serialized model from disk
     print("[INFO] loading model...")
-    net = cv2.dnn.readNetFromCaffe(net_architecture, net_model)
+    net = cv2.dnn.readNetFromCaffe(net_arch, net_model)
     colors = np.random.uniform(0, 255, size=(len(classes), 3))
 
     while running:
@@ -63,12 +70,12 @@ def grab(camera, queue):
                                                                             net=net,
                                                                             classes=classes,
                                                                             colors=colors,
-                                                                            given_confidence=float(confidence),
+                                                                            given_confidence=float(net_confidence),
                                                                             min_area=int(min_area),
                                                                             blur_size=int(blur_size),
                                                                             blur_power=int(blur_power),
                                                                             threshold_low=int(threshold_low),
-                                                                            sending_period=int(sending_period))
+                                                                            sending_period=int(bot_sending_period))
 
         frame["img"] = img
         if queue.qsize() < max_queue_size:
@@ -134,7 +141,8 @@ class MyWindowClass(QtWidgets.QMainWindow, main_form.Ui_MainWindow):  # ui_form)
             self.startButton.setText('Stop')
         else:
             running = False
-            capture_thread.join()
+            if capture_thread is not None:
+                capture_thread.join()
             camera.stop()
             self.startButton.setText('Start')
 
@@ -144,7 +152,7 @@ class MyWindowClass(QtWidgets.QMainWindow, main_form.Ui_MainWindow):  # ui_form)
 
             self.statusLabel.setText(detection_status)  # Output detection status
             self.timeLabel.setText(str(datetime.now().replace(microsecond=0) - start_time))  # Output timestamp
-            self.textField.setText(v_filename)  # Output video filename
+            self.textField.setText(camera.video_filename)  # Output video filename
 
             frame = q.get()
             img = frame["img"]
@@ -184,7 +192,8 @@ class MyWindowClass(QtWidgets.QMainWindow, main_form.Ui_MainWindow):  # ui_form)
         global running, capture_thread
 
         running = False
-        capture_thread.join()
+        if capture_thread is not None:
+            capture_thread.join()
 
     # Checkbox "Hide video" behavior
     @staticmethod
@@ -237,27 +246,23 @@ class MyWindowClass(QtWidgets.QMainWindow, main_form.Ui_MainWindow):  # ui_form)
             self.botStartButton.setText('Start bot')
 
 
-# ui_form_parameters = uic.loadUiType("src/ui/form_parameters.ui")[0] # Опиание GUI в .ui
+# ui_form_parameters = uic.loadUiType("src/ui/form_parameters.ui")[0] # Опиcание GUI в .ui
 class ConfigWindow(QtWidgets.QWidget, config_form.Ui_parametersForm):  # ui_form_parameters):
     def __init__(self, parent=None):
         super().__init__(parent, QtCore.Qt.Window)
         self.setupUi(self)
 
-        min_area, blur_size, blur_power, threshold_low = get_detection_parameters()
         # Output values into edits
         self.counterAreaLineEdit.setText(str(min_area))
         self.blurSizeLineEdit.setText(str(blur_size))
         self.blurPowerLineEdit.setText(str(blur_power))
         self.lowThresholdLineEdit.setText(str(threshold_low))
-
-        bot_token, request_kwargs, private_chat_id, proxy_url, sending_period, username, password = get_bot_parameters()
-        # Output values into edits
         self.botTokenLineEdit.setText(str(bot_token))
-        self.chatIdLineEdit.setText(str(private_chat_id))
-        self.proxyUrlLineEdit.setText(str(proxy_url))
-        self.sendingPeriodLineEdit.setText(str(sending_period))
-        self.proxyUsernameLineEdit.setText(str(username))
-        self.proxyPasswordLineEdit.setText(str(password))
+        self.chatIdLineEdit.setText(str(bot_private_chat_id))
+        self.proxyUrlLineEdit.setText(str(bot_proxy_url))
+        self.sendingPeriodLineEdit.setText(str(bot_sending_period))
+        self.proxyUsernameLineEdit.setText(str(bot_username))
+        self.proxyPasswordLineEdit.setText(str(bot_password))
 
         # Initialized buttons
         self.saveButton.clicked.connect(self.save_parameters)
@@ -265,18 +270,21 @@ class ConfigWindow(QtWidgets.QWidget, config_form.Ui_parametersForm):  # ui_form
 
     # Button "Save" behavior
     def save_parameters(self):
-        global min_area, blur_size, blur_power, threshold_low, bot_token, private_chat_id, proxy_url, sending_period, \
-            username, password
+        global min_area, blur_size, blur_power, threshold_low, \
+            bot_token, bot_private_chat_id, bot_proxy_url, bot_proxy_url, bot_sending_period, bot_username, bot_password
 
-        set_detection_parameters(self.counterAreaLineEdit.text(), self.blurSizeLineEdit.text(),
-                                 self.blurPowerLineEdit.text(), self.lowThresholdLineEdit.text())
+        config["DetectionParameters"]["min_area"] = min_area = self.counterAreaLineEdit.text()
+        config["DetectionParameters"]["blur_size"] = blur_size = self.blurSizeLineEdit.text()
+        config["DetectionParameters"]["blur_power"] = blur_power = self.blurPowerLineEdit.text()
+        config["DetectionParameters"]["threshold_low"] = threshold_low = self.lowThresholdLineEdit.text()
+        config["BotParameters"]["token"] = bot_token = self.botTokenLineEdit.text()
+        config["BotParameters"]["chat_id"] = bot_private_chat_id = self.proxyUrlLineEdit.text()
+        config["BotParameters"]["proxy_url"] = bot_proxy_url = self.chatIdLineEdit.text()
+        config["BotParameters"]["sending_period"] = bot_sending_period = self.sendingPeriodLineEdit.text()
+        config["BotParameters"]["username"] = bot_username = self.proxyUsernameLineEdit.text()
+        config["BotParameters"]["password"] = bot_password = self.proxyPasswordLineEdit.text()
 
-        set_bot_parameters(self.botTokenLineEdit.text(), self.proxyUrlLineEdit.text(),
-                           self.chatIdLineEdit.text(), self.sendingPeriodLineEdit.text(),
-                           self.proxyUsernameLineEdit.text(), self.proxyPasswordLineEdit.text())
-
-        min_area, blur_size, blur_power, threshold_low = get_detection_parameters
-        bot_token, _, private_chat_id, proxy_url, sending_period, username, password = get_bot_parameters()
+        config.update()
 
         self.close()
 

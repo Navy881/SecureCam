@@ -19,7 +19,7 @@ class Camera(object):
         # self.video.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         # self.video.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
-        (self.grabbed, self.frame) = self.video.read()  # frame как атрибует объекта Camera
+        (self.grabbed, self.frame) = self.video.read()  # frame как атрибут объекта Camera
 
         self.updating = False
         self.update_frame_thread = None
@@ -595,7 +595,7 @@ class Camera(object):
 
             return frame, detected_objects
 
-    def emotion_detection(self, dnn_detection_status, net, given_confidence,
+    def emotion_detection(self, dnn_detection_status, face_net, face_given_confidence,
                           emotion_net=None, emotion_classes=None, emotion_given_confidence=None):
         while dnn_detection_status:
             ret, frame = self.video.read()
@@ -614,8 +614,8 @@ class Camera(object):
 
             # pass the blob through the network and obtain the detections and
             # predictions
-            net.setInput(blob)
-            detections = net.forward()
+            face_net.setInput(blob)
+            detections = face_net.forward()
 
             # loop over the detections
             for i in np.arange(0, detections.shape[2]):
@@ -626,7 +626,7 @@ class Camera(object):
 
                 # filter out weak detections by ensuring the `confidence` is
                 # greater than the minimum confidence
-                if confidence > given_confidence:
+                if confidence > face_given_confidence:
                     # extract the index of the class label from the
                     # `detections`, then compute the (x, y)-coordinates of
                     # the bounding box for the object

@@ -14,7 +14,7 @@ from re import findall
 from subprocess import check_output
 
 from src.camera import Camera
-from src.tools.param_manage import get_detection_parameters, get_bot_parameters, get_nn_parameters
+from src.tools.config import get_detection_parameters, get_bot_parameters, get_nn_parameters
 from src.tools.video_record import create_video
 
 running = False

@@ -8,21 +8,22 @@ import numpy as np
 from PIL import Image, ImageFont, ImageDraw
 
 from src.camera import Camera
-from src.tools.param_manage import get_nn_parameters
+from src.tools.config import config
 from src.ZvooqApi import ZvooqApi
 
-net_architecture, net_model, classes, confidence = get_nn_parameters()
+config.get_config()
 
-CAM = 0  # TODO to config
-FPS = 20  # TODO to config
+CAM = config["CameraParameters"]["camera_index"]
+FPS = config["CameraParameters"]["fps"]
+MUSIC_SERVICE_URL = config["MusicApiParameters"]["url"]
+MUSIC_SERVICE_LOGIN = config["MusicApiParameters"]["email"]
+MUSIC_SERVICE_PASS = config["MusicApiParameters"]["password"]
 
 camera = Camera(CAM, FPS, True)
 
-url = 'https://sber-zvuk.com/'
-email = 'ag881.pst@gmail.com'
-password = 'rksm911911Hh'
-
-zvooq = ZvooqApi(url=url, username=email, password=password)
+zvooq = ZvooqApi(url=MUSIC_SERVICE_URL,
+                 username=MUSIC_SERVICE_LOGIN,
+                 password=MUSIC_SERVICE_PASS)
 
 
 def play_music(query: str):
@@ -54,23 +55,33 @@ def play_music(query: str):
 
 
 def main():
-    net = cv2.dnn.readNetFromCaffe(net_architecture, net_model)
-    emotion_net = cv2.dnn.readNetFromCaffe("dnn/emotion_recog_deploy.prototxt", "dnn/EmotiW_VGG_S.caffemodel")
+
+    face_net_arch = config["NNParameters"]["face"]["architecture"]
+    face_net_model = config["NNParameters"]["face"]["model"]
+    face_net_confidence = config["NNParameters"]["face"]["confidence"]
+
+    emotion_net_arch = config["NNParameters"]["emotion"]["architecture"]
+    emotion_net_model = config["NNParameters"]["emotion"]["model"]
+    emotion_net_confidence = config["NNParameters"]["emotion"]["confidence"]
+    emotion_classes = config["NNParameters"]["emotion"]["classes"]
+
+    face_net = cv2.dnn.readNetFromCaffe(face_net_arch, face_net_model)
+    emotion_net = cv2.dnn.readNetFromCaffe(emotion_net_arch, emotion_net_model)
 
     track_info = ''
 
     while True:
         rg_frame, emotion_detection = camera.emotion_detection(dnn_detection_status=True,
-                                                               net=net,
-                                                               given_confidence=float(confidence),
+                                                               face_net=face_net,
+                                                               face_given_confidence=float(face_net_confidence),
                                                                emotion_net=emotion_net,
-                                                               emotion_classes=classes,
-                                                               emotion_given_confidence=float("0.5"))
+                                                               emotion_classes=emotion_classes,
+                                                               emotion_given_confidence=float(emotion_net_confidence))
 
         if len(emotion_detection) > 0:
             emotion_confidence = max(emotion_detection[0])
             idx = emotion_detection[0].tolist().index(emotion_confidence)
-            emotion = classes[idx]
+            emotion = emotion_classes[idx]
 
             if cv2.waitKey(1) & 0xFF == ord('p'):
                 track_author, track_name = play_music(emotion)
