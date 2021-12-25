@@ -14,7 +14,7 @@ from re import findall
 from subprocess import check_output
 
 from src.camera import Camera
-from src.tools.config import get_detection_parameters, get_bot_parameters, get_nn_parameters
+from src.tools.config import config
 from src.tools.video_record import create_video
 
 running = False
@@ -27,15 +27,27 @@ v_filename = ''
 
 star_time = datetime.now().replace(microsecond=0)
 
-min_area, blur_size, blur_power, threshold_low = get_detection_parameters()
-bot_token, request_kwargs, private_chat_id, proxy_url, sending_period, username, password = get_bot_parameters()
-net_architecture, net_model, classes, confidence = get_nn_parameters()
+CAM = config["CameraParameters"]["camera_index"]
+FPS = config["CameraParameters"]["fps"]
+net_arch = config["NNParameters"]["object"]["architecture"]
+net_model = config["NNParameters"]["object"]["model"]
+net_confidence = config["NNParameters"]["object"]["confidence"]
+classes = config["NNParameters"]["object"]["classes"]
+min_area = config["DetectionParameters"]["min_area"]
+blur_size = config["DetectionParameters"]["blur_size"]
+blur_power = config["DetectionParameters"]["blur_power"]
+threshold_low = config["DetectionParameters"]["threshold_low"]
+bot_token = config["BotParameters"]["token"]
+bot_private_chat_id = config["BotParameters"]["chat_id"]
+bot_proxy_url = config["BotParameters"]["proxy_url"]
+bot_sending_period = config["BotParameters"]["sending_period"]
+bot_username = config["BotParameters"]["username"]
+bot_password = config["BotParameters"]["password"]
 
-SetProxy = telepot.api.set_proxy(proxy_url, (username, password))
+
+SetProxy = telepot.api.set_proxy(bot_proxy_url, (bot_username, bot_password))
 bot = telepot.Bot(bot_token)
 
-CAM = 0  # TODO to config
-FPS = 10  # TODO to config
 camera = Camera(CAM, FPS)
 
 send_time = datetime.today().timestamp()
@@ -46,14 +58,14 @@ def grab():
 
     out, v_filename = create_video()
     print("[INFO] loading model...")
-    net = cv2.dnn.readNetFromCaffe(net_architecture, net_model)  # Load serialized model from disk
+    net = cv2.dnn.readNetFromCaffe(net_arch, net_model)  # Load serialized model from disk
     colors = np.random.uniform(0, 255, size=(len(classes), 3))
 
     while running:
         img, detection_status = camera.motion_detect(running, out, show_edges, dnn_detection_status, net,
-                                                     classes, colors, float(confidence), int(min_area),
+                                                     classes, colors, float(net_confidence), int(min_area),
                                                      int(blur_size), int(blur_size), int(threshold_low),
-                                                     int(sending_period))
+                                                     int(bot_sending_period))
         cv2.imshow("Camera", img)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -140,8 +152,8 @@ def alarm():
                 time.sleep(1)
                 print("sending image...")
                 now = datetime.strftime(datetime.now(), "%Y.%m.%d %H:%M:%S")
-                bot.sendPhoto(private_chat_id, photo=open('photo/screenshot_temp.png', 'rb'))
-                print("{} - bot sent image into chat: {}".format(now, private_chat_id))
+                bot.sendPhoto(bot_private_chat_id, photo=open('photo/screenshot_temp.png', 'rb'))
+                print("{} - bot sent image into chat: {}".format(now, bot_private_chat_id))
                 send_time = os.path.getmtime('photo/screenshot_temp.png')
 
 

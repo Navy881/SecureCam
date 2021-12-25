@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 import sys
 import subprocess
@@ -31,7 +30,6 @@ detection_status = ''
 start_time = datetime.now().replace(microsecond=0)
 
 q = Queue()
-config.get_config()
 
 CAM = config["CameraParameters"]["camera_index"]
 FPS = config["CameraParameters"]["fps"]
@@ -50,7 +48,22 @@ bot_sending_period = config["BotParameters"]["sending_period"]
 bot_username = config["BotParameters"]["username"]
 bot_password = config["BotParameters"]["password"]
 
-camera = Camera(CAM, FPS, True)
+# load our serialized model from disk
+print("[INFO] loading model...")
+net = cv2.dnn.readNetFromCaffe(net_arch, net_model)
+
+camera = Camera(camera_idx=CAM,
+                fps=FPS,
+                record_video=True,
+                min_area=int(min_area),
+                blur_size=int(blur_size),
+                blur_power=int(blur_power),
+                threshold_low=int(threshold_low),
+                sending_period=int(bot_sending_period),
+                net=net,
+                detection_classes=classes,
+                confidence=float(net_confidence),
+                classes_colors=np.random.uniform(0, 255, size=(len(classes), 3)))
 
 
 def grab(camera, queue):
@@ -58,24 +71,10 @@ def grab(camera, queue):
 
     frame = {}
 
-    # load our serialized model from disk
-    print("[INFO] loading model...")
-    net = cv2.dnn.readNetFromCaffe(net_arch, net_model)
-    colors = np.random.uniform(0, 255, size=(len(classes), 3))
-
     while running:
         img, jpeg, detection_status, person_in_image = camera.motion_detect(running=running,
                                                                             show_edges=show_edges,
-                                                                            dnn_detection_status=dnn_detection_status,
-                                                                            net=net,
-                                                                            classes=classes,
-                                                                            colors=colors,
-                                                                            given_confidence=float(net_confidence),
-                                                                            min_area=int(min_area),
-                                                                            blur_size=int(blur_size),
-                                                                            blur_power=int(blur_power),
-                                                                            threshold_low=int(threshold_low),
-                                                                            sending_period=int(bot_sending_period))
+                                                                            dnn_detection_status=dnn_detection_status)
 
         frame["img"] = img
         if queue.qsize() < max_queue_size:
@@ -294,3 +293,4 @@ if __name__ == "__main__":
     w = MyWindowClass(None)
     w.show()
     app.exec_()
+# >>>>>>> 51832661362d622aab980952345f7dbb07af8a78

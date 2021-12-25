@@ -11,15 +11,12 @@ from src.camera import Camera
 from src.tools.config import config
 from src.ZvooqApi import ZvooqApi
 
-config.get_config()
 
 CAM = config["CameraParameters"]["camera_index"]
 FPS = config["CameraParameters"]["fps"]
 MUSIC_SERVICE_URL = config["MusicApiParameters"]["url"]
 MUSIC_SERVICE_LOGIN = config["MusicApiParameters"]["email"]
 MUSIC_SERVICE_PASS = config["MusicApiParameters"]["password"]
-
-camera = Camera(CAM, FPS, True)
 
 zvooq = ZvooqApi(url=MUSIC_SERVICE_URL,
                  username=MUSIC_SERVICE_LOGIN,
@@ -68,42 +65,50 @@ def main():
     face_net = cv2.dnn.readNetFromCaffe(face_net_arch, face_net_model)
     emotion_net = cv2.dnn.readNetFromCaffe(emotion_net_arch, emotion_net_model)
 
+    camera = Camera(camera_idx=CAM,
+                    fps=FPS,
+                    net=face_net,
+                    detection_classes=emotion_classes,
+                    confidence=float(face_net_confidence),
+                    detection_period_in_seconds=0.3)
+
+    camera.start()
+
     track_info = ''
 
     while True:
-        rg_frame, emotion_detection = camera.emotion_detection(dnn_detection_status=True,
-                                                               face_net=face_net,
-                                                               face_given_confidence=float(face_net_confidence),
-                                                               emotion_net=emotion_net,
-                                                               emotion_classes=emotion_classes,
-                                                               emotion_given_confidence=float(emotion_net_confidence))
+        rg_frame = camera.emotion_detection(emotion_net=emotion_net)
 
-        if len(emotion_detection) > 0:
-            emotion_confidence = max(emotion_detection[0])
-            idx = emotion_detection[0].tolist().index(emotion_confidence)
-            emotion = emotion_classes[idx]
+        if len(camera.detected_objects) > 0:
+            emotion = camera.detected_objects[0].label
+
+        # if len(emotion_detection) > 0:
+        #     emotion_confidence = max(emotion_detection[0])
+        #     idx = emotion_detection[0].tolist().index(emotion_confidence)
+        #     emotion = camera.emotion_classes[idx]
 
             if cv2.waitKey(1) & 0xFF == ord('p'):
                 track_author, track_name = play_music(emotion)
                 track_info = 'Track: {} - {}'.format(track_author, track_name)
 
-        img_pil = Image.fromarray(rg_frame)
-        font = ImageFont.truetype("Arial Unicode.ttf", size=20)
-        draw = ImageDraw.Draw(img_pil)
-        draw.text((5, 10), track_info, font=font, fill=(0, 0, 255, 0))
-        rg_frame = np.array(img_pil)
+        # img_pil = Image.fromarray(rg_frame)
+        # font = ImageFont.truetype("Arial Unicode.ttf", size=20)
+        # draw = ImageDraw.Draw(img_pil)
+        # draw.text((5, 10), track_info, font=font, fill=(0, 0, 255, 0))
+        # rg_frame = np.array(img_pil)
 
-        # cv2.putText(img=rg_frame,
-        #             text=track_info,
-        #             org=(5, 20),
-        #             fontFace=cv2.FONT_HERSHEY_DUPLEX,
-        #             fontScale=0.6,
-        #             color=[0, 0, 255],
-        #             thickness=1)
+        cv2.putText(img=rg_frame,
+                    text=track_info,
+                    org=(5, 20),
+                    fontFace=cv2.FONT_HERSHEY_DUPLEX,
+                    fontScale=0.6,
+                    color=[0, 0, 255],
+                    thickness=1)
 
         cv2.imshow('frame', rg_frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
+            camera.stop()
             break
     cv2.destroyAllWindows()
 
